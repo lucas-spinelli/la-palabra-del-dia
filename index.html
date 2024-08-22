@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>La Palabra del Día</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f8f9fa;
+            color: #333;
+            text-align: center;
+            margin: 0;
+            padding: 20px;
+        }
+        h1 {
+            font-size: 24px;
+            margin-bottom: 20px;
+        }
+        #game-board {
+            display: grid;
+            grid-template-columns: repeat(5, 50px);
+            grid-template-rows: repeat(6, 50px);
+            gap: 10px;
+            justify-content: center;
+            margin-bottom: 20px;
+        }
+        .tile {
+            width: 50px;
+            height: 50px;
+            border: 2px solid #ddd;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            font-weight: bold;
+            background-color: #fff;
+            transition: background-color 0.3s;
+        }
+        .correct { background-color: #6aaa64; color: white; }
+        .present { background-color: #c9b458; color: white; }
+        .absent { background-color: #787c7e; color: white; }
+        #keyboard {
+            margin-top: 20px;
+        }
+        #keyboard button {
+            padding: 10px 15px;
+            margin: 5px;
+            font-size: 18px;
+            background-color: #e0e0e0;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        #keyboard button.correct { background-color: #6aaa64; color: white; }
+        #keyboard button.present { background-color: #c9b458; color: white; }
+        #keyboard button.absent { background-color: #787c7e; color: white; }
+        #keyboard button#enter { background-color: #4caf50; color: white; }
+        #keyboard button#delete { background-color: #f44336; color: white; }
+        
+        /* Modal Styles */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0, 0, 0, 0.4);
+        }
+        .modal-content {
+            background-color: #fefefe;
+            margin: 15% auto;
+            padding: 20px;
+            border: 1px solid #888;
+            width: 80%;
+            max-width: 400px;
+            border-radius: 10px;
+            text-align: center;
+        }
+        .modal h2 {
+            font-size: 20px;
+        }
+        .modal .stat {
+            display: flex;
+            justify-content: space-between;
+            padding: 5px 0;
+        }
+        .modal .close {
+            color: #aaa;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+        }
+        .modal .close:hover,
+        .modal .close:focus {
+            color: black;
+            text-decoration: none;
+            cursor: pointer;
+        }
+        .modal .message {
+            font-size: 18px;
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+    <h1>LA PALABRA DEL DÍA</h1>
+    <div id="game-board">
+        <!-- The game tiles will be generated here by JavaScript -->
+    </div>
+    <div id="keyboard">
+        <!-- Keyboard layout -->
+        <button>Q</button><button>W</button><button>E</button><button>R</button><button>T</button><button>Y</button><button>U</button><button>I</button><button>O</button><button>P</button>
+        <br>
+        <button>A</button><button>S</button><button>D</button><button>F</button><button>G</button><button>H</button><button>J</button><button>K</button><button>L</button><button>Ñ</button>
+        <br>
+        <button>Z</button><button>X</button><button>C</button><button>V</button><button>B</button><button>N</button><button>M</button>
+        <br>
+        <button id="enter">ENVIAR</button><button id="delete">⌫</button>
+    </div>
+
+    <!-- Modal for Statistics and Game End -->
+    <div id="game-end-modal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <div class="message" id="game-end-message"></div>
+            <div class="stat">
+                <span>JUGADAS:</span><span id="games-played">0</span>
+            </div>
+            <div class="stat">
+                <span>VICTORIAS:</span><span id="win-percentage">0%</span>
+            </div>
+            <div class="stat">
+                <span>RACHA ACTUAL:</span><span id="current-streak">0</span>
+            </div>
+            <div class="stat">
+                <span>MEJOR RACHA:</span><span id="best-streak">0</span>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let wordOfTheDay = '';
+        let currentRow = 0;
+        let currentTile = 0;
+        let gameEnded = false;
+        let boardState = Array(6).fill("").map(() => Array(5).fill(""));
+        let keyboardState = {};
+
+        // Load saved stats
+        const stats = {
+            gamesPlayed: localStorage.getItem('gamesPlayed') || 0,
+            wins: localStorage.getItem('wins') || 0,
+            currentStreak: localStorage.getItem('currentStreak') || 0,
+            bestStreak: localStorage.getItem('bestStreak') || 0,
+        };
+
+        function updateStats() {
+            document.getElementById('games-played').textContent = stats.gamesPlayed;
+            document.getElementById('win-percentage').textContent = stats.gamesPlayed ? Math.floor((stats.wins / stats.gamesPlayed) * 100) + '%' : '0%';
+            document.getElementById('current-streak').textContent = stats.currentStreak;
+            document.getElementById('best-streak').textContent = stats.bestStreak;
+        }
+
+        function saveStats() {
+            localStorage.setItem('gamesPlayed', stats.gamesPlayed);
+            localStorage.setItem('wins', stats.wins);
+            localStorage.setItem('currentStreak', stats.currentStreak);
+            localStorage.setItem('bestStreak', stats.bestStreak);
+        }
+
+        function showModal(message) {
+            const modal = document.getElementById('game-end-modal');
+            document.getElementById('game-end-message').textContent = message;
+            modal.style.display = 'block';
+            updateStats();
+        }
+
+        function closeModal() {
+            const modal = document.getElementById('game-end-modal');
+            modal.style.display = 'none';
+        }
+
+        function createTileElement() {
+            const tile = document.createElement('div');
+            tile.classList.add('tile');
+            return tile;
+        }
+
+        function initBoard() {
+            const gameBoard = document.getElementById('game-board');
+            gameBoard.innerHTML = '';
+            for (let i = 0; i < 6; i++) {
+                for (let j = 0; j < 5; j++) {
+                    gameBoard.appendChild(createTileElement());
+                }
+            }
+        }
+
+        function updateBoard() {
+            const gameBoard = document.getElementById('game-board');
+            const tiles = gameBoard.querySelectorAll('.tile');
+            boardState.forEach((row, rowIndex) => {
+                row.forEach((letter, tileIndex) => {
+                    const tile = tiles[rowIndex * 5 + tileIndex];
+                    tile.textContent = letter;
+                    if (rowIndex < currentRow) {
+                        const key = letter.toUpperCase();
+                        if (wordOfTheDay.includes(key)) {
+                            if (wordOfTheDay[tileIndex] === key) {
+                                tile.classList.add('correct');
+                                keyboardState[key] = 'correct';
+                            } else {
+                                tile.classList.add('present');
+                                if (keyboardState[key] !== 'correct') {
+                                    keyboardState[key] = 'present';
+                                }
+                            }
+                        } else {
+                            tile.classList.add('absent');
+                            if (!keyboardState[key]) {
+                                keyboardState[key] = 'absent';
+                            }
+                        }
+                    }
+                });
+            });
+            updateKeyboard();
+        }
+
+        function updateKeyboard() {
+            const buttons = document.querySelectorAll('#keyboard button');
+            buttons.forEach(button => {
+                const letter = button.textContent;
+                const state = keyboardState[letter];
+                if (state) {
+                    button.classList.remove('correct', 'present', 'absent');
+                    button.classList.add(state);
+                }
+            });
+        }
+
+        function handleKeyPress(event) {
+            if (gameEnded) return;
+            const key = event.key.toUpperCase();
+            if (key === 'ENTER') {
+                submitGuess();
+            } else if (key === 'BACKSPACE') {
+                deleteLetter();
+            } else if (/^[A-ZÑ]$/.test(key)) {
+                addLetter(key);
+            }
+        }
+
+        function addLetter(letter) {
+            if (currentTile < 5) {
+                boardState[currentRow][currentTile] = letter;
+                const tile = document.querySelector(`#game-board .tile:nth-child(${currentRow * 5 + currentTile + 1})`);
+                tile.textContent = letter;
+                currentTile++;
+            }
+        }
+
+        function deleteLetter() {
+            if (currentTile > 0) {
+                currentTile--;
+                boardState[currentRow][currentTile] = "";
+                const tile = document.querySelector(`#game-board .tile:nth-child(${currentRow * 5 + currentTile + 1})`);
+                tile.textContent = "";
+            }
+        }
+
+        function submitGuess() {
+            if (currentTile < 5) return; // No guess if the row is incomplete
+            const guess = boardState[currentRow].join('');
+            if (guess.length < 5) return;
+            if (guess === wordOfTheDay) {
+                stats.gamesPlayed++;
+                stats.wins++;
+                stats.currentStreak++;
+                stats.bestStreak = Math.max(stats.bestStreak, stats.currentStreak);
+                saveStats();
+                gameEnded = true;
+                updateBoard();
+                showModal('¡Felicidades! Has adivinado la palabra.');
+                return;
+            } else if (currentRow === 5) {
+                stats.gamesPlayed++;
+                stats.currentStreak = 0;
+                saveStats();
+                gameEnded = true;
+                updateBoard();
+                showModal(`Lo siento, has agotado los intentos. La palabra era ${wordOfTheDay}.`);
+                return;
+            }
+            currentRow++;
+            currentTile = 0;
+            updateBoard();
+        }
+
+        function loadWordOfTheDay() {
+            fetch('dias.txt')
+                .then(response => response.text())
+                .then(text => {
+                    const words = text.split('\n').filter(word => word.trim() !== '');
+                    const today = new Date();
+                    const index = today.getDate() % words.length; // Use day of the month for word index
+                    wordOfTheDay = words[index].toUpperCase();
+                });
+        }
+
+        document.getElementById('keyboard').addEventListener('click', (event) => {
+            if (gameEnded) return;
+            const button = event.target;
+            const letter = button.textContent;
+            if (letter === '⌫') {
+                deleteLetter();
+            } else if (letter === 'ENVIAR') {
+                submitGuess();
+            } else if (/^[A-ZÑ]$/.test(letter)) {
+                addLetter(letter);
+            }
+        });
+
+        document.querySelector('.modal .close').addEventListener('click', closeModal);
+        window.addEventListener('click', (event) => {
+            if (event.target === document.getElementById('game-end-modal')) {
+                closeModal();
+            }
+        });
+        document.addEventListener('keydown', handleKeyPress);
+        document.addEventListener('DOMContentLoaded', () => {
+            initBoard();
+            loadWordOfTheDay();
+        });
+    </script>
+</body>
+</html>
