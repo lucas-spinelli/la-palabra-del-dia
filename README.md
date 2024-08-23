@@ -35,7 +35,7 @@ Sigue estos pasos para instalar y ejecutar el juego localmente:
 1. **Clona el repositorio**:
 
    ```bash
-   git clone https://github.com/tu-usuario/tu-repositorio.git
+   git clone https://github.com/lucas-spinelli/la-palabra-del-dia.git
 2. Navega al directorio del proyecto:
    cd tu-repositorio
 3. Abre el archivo index.html en tu navegador.
