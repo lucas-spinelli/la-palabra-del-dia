@@ -17,6 +17,10 @@
             font-size: 24px;
             margin-bottom: 20px;
         }
+        #level-title {
+            font-size: 18px;
+            margin-bottom: 20px;
+        }
         #game-board {
             display: grid;
             grid-template-columns: repeat(5, 50px);
@@ -93,20 +97,22 @@
             float: right;
             font-size: 28px;
             font-weight: bold;
-            cursor: pointer;
         }
         .modal .close:hover,
         .modal .close:focus {
             color: black;
             text-decoration: none;
+            cursor: pointer;
         }
-        .modal.no-close .close {
-            display: none;
+        .modal .message {
+            font-size: 18px;
+            margin-bottom: 20px;
         }
     </style>
 </head>
 <body>
-    <h1 id="level-title">Nivel 1</h1>
+    <h1>LA PALABRA DEL DÍA</h1>
+    <div id="level-title">Nivel 1</div>
     <div id="game-board">
         <!-- The game tiles will be generated here by JavaScript -->
     </div>
@@ -142,20 +148,20 @@
     </div>
 
     <!-- Modal for Last Level -->
-    <div id="last-level-modal" class="modal no-close">
+    <div id="last-level-modal" class="modal">
         <div class="modal-content">
             <div class="message" id="last-level-message"></div>
             <div class="stat">
-                <span>JUGADAS:</span><span id="games-played-last">0</span>
+                <span>JUGADAS:</span><span id="last-level-games-played">0</span>
             </div>
             <div class="stat">
-                <span>VICTORIAS:</span><span id="win-percentage-last">0%</span>
+                <span>VICTORIAS:</span><span id="last-level-win-percentage">0%</span>
             </div>
             <div class="stat">
-                <span>RACHA ACTUAL:</span><span id="current-streak-last">0</span>
+                <span>RACHA ACTUAL:</span><span id="last-level-current-streak">0</span>
             </div>
             <div class="stat">
-                <span>MEJOR RACHA:</span><span id="best-streak-last">0</span>
+                <span>MEJOR RACHA:</span><span id="last-level-best-streak">0</span>
             </div>
         </div>
     </div>
@@ -166,23 +172,26 @@
         let currentTile = 0;
         let gameEnded = false;
         let boardState = Array(6).fill("").map(() => Array(5).fill(""));
-        let stats = {
+        let keyboardState = {};
+        let level = 0; // Level starts at 0 (Level 1)
+
+        // Load saved stats
+        const stats = {
             gamesPlayed: localStorage.getItem('gamesPlayed') || 0,
             wins: localStorage.getItem('wins') || 0,
             currentStreak: localStorage.getItem('currentStreak') || 0,
             bestStreak: localStorage.getItem('bestStreak') || 0,
         };
-        let level = 0;
 
         function updateStats() {
             document.getElementById('games-played').textContent = stats.gamesPlayed;
             document.getElementById('win-percentage').textContent = stats.gamesPlayed ? Math.floor((stats.wins / stats.gamesPlayed) * 100) + '%' : '0%';
             document.getElementById('current-streak').textContent = stats.currentStreak;
             document.getElementById('best-streak').textContent = stats.bestStreak;
-            document.getElementById('games-played-last').textContent = stats.gamesPlayed;
-            document.getElementById('win-percentage-last').textContent = stats.gamesPlayed ? Math.floor((stats.wins / stats.gamesPlayed) * 100) + '%' : '0%';
-            document.getElementById('current-streak-last').textContent = stats.currentStreak;
-            document.getElementById('best-streak-last').textContent = stats.bestStreak;
+            document.getElementById('last-level-games-played').textContent = stats.gamesPlayed;
+            document.getElementById('last-level-win-percentage').textContent = stats.gamesPlayed ? Math.floor((stats.wins / stats.gamesPlayed) * 100) + '%' : '0%';
+            document.getElementById('last-level-current-streak').textContent = stats.currentStreak;
+            document.getElementById('last-level-best-streak').textContent = stats.bestStreak;
         }
 
         function saveStats() {
@@ -194,177 +203,148 @@
 
         function showModal(message, isLastLevel = false) {
             const modal = isLastLevel ? document.getElementById('last-level-modal') : document.getElementById('game-end-modal');
-            document.getElementById('game-end-message').textContent = message;
-            document.getElementById('last-level-message').textContent = message;
-            modal.style.display = 'block';
-            updateStats();
-        }
-
+            document.getElementById(isLastLevel ? 'last-level-message' : 'game-end-message').textContent = message;
+modal.style.display = 'block';
+}
         function closeModal() {
-            const modal = document.getElementById('game-end-modal');
-            modal.style.display = 'none';
-        }
+        document.getElementById('last-level-modal').style.display = 'none';
+        document.getElementById('game-end-modal').style.display = 'none';
+    }
 
-        function createTileElement() {
-            const tile = document.createElement('div');
-            tile.classList.add('tile');
-            return tile;
-        }
-
-        function initBoard() {
-            const gameBoard = document.getElementById('game-board');
-            for (let i = 0; i < 6; i++) {
-                for (let j = 0; j < 5; j++) {
-                    const tile = createTileElement();
-                    gameBoard.appendChild(tile);
+    function fetchWord() {
+        // Fetching the current word from the file based on level
+        fetch('dias.txt')
+            .then(response => response.text())
+            .then(data => {
+                const words = data.split('\n');
+                wordOfTheDay = words[level].trim().toUpperCase();
+                if (!wordOfTheDay) {
+                    showModal('¡Has llegado al último nivel! Aquí están tus estadísticas.');
+                    gameEnded = true;
+                } else {
+                    setupBoard();
                 }
-            }
-        }
+            });
+    }
 
-        function setLevel(level) {
-            document.getElementById('level-title').textContent = `Nivel ${level + 1}`;
-            document.getElementById('page-title').textContent = `La Palabra del Día - Nivel ${level + 1}`;
-        }
+    function setupBoard() {
+        const gameBoard = document.getElementById('game-board');
+        gameBoard.innerHTML = '';
+        boardState = Array(6).fill("").map(() => Array(5).fill(""));
 
-        function fetchWord(level) {
-            fetch('dias.txt')
-                .then(response => response.text())
-                .then(data => {
-                    const words = data.split('\n').map(word => word.trim()).filter(word => word);
-                    wordOfTheDay = words[level];
-                    if (!wordOfTheDay) {
-                        showModal('¡Has llegado al último nivel!', true);
-                        gameEnded = true;
+        for (let row = 0; row < 6; row++) {
+            for (let col = 0; col < 5; col++) {
+                const tile = document.createElement('div');
+                tile.classList.add('tile');
+                tile.dataset.row = row;
+                tile.dataset.col = col;
+                tile.addEventListener('click', () => {
+                    if (!gameEnded) {
+                        tile.textContent = '';
+                        tile.classList.remove('correct', 'present', 'absent');
+                        currentTile = col;
+                        currentRow = row;
+                        tile.focus();
                     }
                 });
+                gameBoard.appendChild(tile);
+            }
         }
+    }
 
-        function checkGuess() {
-            const guess = boardState[currentRow].join('');
-            if (guess === wordOfTheDay) {
-                // Player wins
-                for (let i = 0; i < 5; i++) {
-                    const tile = document.querySelector(`#game-board .tile:nth-child(${currentRow * 5 + i + 1})`);
+    function checkWord() {
+        const guess = boardState[currentRow].join('');
+        if (guess === wordOfTheDay) {
+            // Correct guess
+            document.querySelectorAll('.tile').forEach(tile => {
+                if (tile.dataset.row == currentRow) {
                     tile.classList.add('correct');
                 }
-                stats.gamesPlayed++;
-                stats.wins++;
-                stats.currentStreak++;
-                stats.bestStreak = Math.max(stats.currentStreak, stats.bestStreak);
-                saveStats();
-                setTimeout(() => {
-                    if (wordOfTheDay) {
-                        level++;
-                        if (wordOfTheDay) {
-                            fetchWord(level);
-                            setLevel(level);
-                        }
-                        showModal('¡Has ganado!', false);
-                    }
-                }, 1000);
-            } else {
-                // Check each letter
-                for (let i = 0; i < 5; i++) {
-                    const tile = document.querySelector(`#game-board .tile:nth-child(${currentRow * 5 + i + 1})`);
-                    if (wordOfTheDay.includes(guess[i])) {
-                        tile.classList.add('present');
-                    } else {
-                        tile.classList.add('absent');
-                    }
-                }
-                currentRow++;
-                if (currentRow === 6) {
-                    // Game over
-                    showModal('¡Has perdido! La palabra era: ' + wordOfTheDay);
-                }
-            }
-        }
-
-        function handleKeyPress(e) {
-            if (gameEnded) return;
-
-            if (e.key === 'Enter') {
-                checkGuess();
-            } else if (e.key === 'Backspace') {
-                if (currentTile > 0) {
-                    boardState[currentRow][currentTile - 1] = '';
-                    currentTile--;
-                    updateBoard();
-                }
-            } else if (/^[A-ZÑ]$/.test(e.key)) {
-                if (currentTile < 5) {
-                    boardState[currentRow][currentTile] = e.key;
-                    currentTile++;
-                    updateBoard();
-                }
-            }
-        }
-
-        function updateBoard() {
-            const tiles = document.querySelectorAll('#game-board .tile');
-            tiles.forEach((tile, index) => {
-                const row = Math.floor(index / 5);
-                const col = index % 5;
-                tile.textContent = boardState[row][col] || '';
-                tile.className = 'tile';
             });
-        }
-
-        function init() {
-            initBoard();
-            setLevel(level);
-            fetchWord(level);
+            stats.wins++;
+            stats.currentStreak++;
+            if (stats.currentStreak > stats.bestStreak) stats.bestStreak = stats.currentStreak;
+            stats.gamesPlayed++;
+            saveStats();
             updateStats();
-
-            document.getElementById('keyboard').addEventListener('click', (e) => {
-                if (gameEnded) return;
-
-                if (e.target.id === 'enter') {
-                    checkGuess();
-                } else if (e.target.id === 'delete') {
-                    if (currentTile > 0) {
-                        boardState[currentRow][currentTile - 1] = '';
-                        currentTile--;
-                        updateBoard();
-                    }
-                } else if (e.target.tagName === 'BUTTON') {
-                    const key = e.target.textContent;
-                    if (currentTile < 5) {
-                        boardState[currentRow][currentTile] = key;
-                        currentTile++;
-                        updateBoard();
-                    }
+            level++;
+            if (level >= document.querySelectorAll('#game-board .tile').length / 6) {
+                showModal('¡Has llegado al último nivel! Aquí están tus estadísticas.', true);
+            } else {
+                setTimeout(() => {
+                    window.location.reload();
+                }, 2000);
+            }
+        } else {
+            // Incorrect guess
+            document.querySelectorAll('.tile').forEach(tile => {
+                if (tile.dataset.row == currentRow) {
+                    tile.classList.add('absent');
                 }
             });
-
-            document.querySelectorAll('#keyboard button').forEach(button => {
-                button.addEventListener('click', () => {
-                    const key = button.textContent;
-                    if (key === 'ENVIAR') {
-                        checkGuess();
-                    } else if (key === '⌫') {
-                        if (currentTile > 0) {
-                            boardState[currentRow][currentTile - 1] = '';
-                            currentTile--;
-                            updateBoard();
-                        }
-                    } else {
-                        if (currentTile < 5) {
-                            boardState[currentRow][currentTile] = key;
-                            currentTile++;
-                            updateBoard();
-                        }
-                    }
-                });
-            });
-
-            window.addEventListener('keydown', handleKeyPress);
-
-            document.querySelector('#game-end-modal .close').addEventListener('click', closeModal);
-            document.querySelector('#last-level-modal .close').addEventListener('click', closeModal);
+            stats.currentStreak = 0;
+            stats.gamesPlayed++;
+            saveStats();
+            updateStats();
         }
+    }
 
-        init();
-    </script>
-</body>
-</html>
+    function handleKeyboardInput(event) {
+        if (gameEnded) return;
+
+        const key = event.key.toUpperCase();
+        if (key === 'ENTER') {
+            checkWord();
+        } else if (key === 'BACKSPACE') {
+            if (currentTile > 0) {
+                currentTile--;
+                boardState[currentRow][currentTile] = '';
+                document.querySelector(`.tile[data-row="${currentRow}"][data-col="${currentTile}"]`).textContent = '';
+            }
+        } else if (key.match(/^[A-ZÑ]$/)) {
+            if (currentTile < 5) {
+                boardState[currentRow][currentTile] = key;
+                document.querySelector(`.tile[data-row="${currentRow}"][data-col="${currentTile}"]`).textContent = key;
+                currentTile++;
+            }
+        }
+    }
+
+    function handleKeyboardClick(event) {
+        if (gameEnded) return;
+
+        const button = event.target;
+        const key = button.textContent;
+
+        if (key === 'ENVIAR') {
+            checkWord();
+        } else if (key === '⌫') {
+            if (currentTile > 0) {
+                currentTile--;
+                boardState[currentRow][currentTile] = '';
+                document.querySelector(`.tile[data-row="${currentRow}"][data-col="${currentTile}"]`).textContent = '';
+            }
+        } else if (key.match(/^[A-ZÑ]$/)) {
+            if (currentTile < 5) {
+                boardState[currentRow][currentTile] = key;
+                document.querySelector(`.tile[data-row="${currentRow}"][data-col="${currentTile}"]`).textContent = key;
+                currentTile++;
+            }
+        }
+    }
+
+    document.querySelectorAll('#keyboard button').forEach(button => {
+        button.addEventListener('click', handleKeyboardClick);
+    });
+
+    window.addEventListener('keydown', handleKeyboardInput);
+    document.querySelector('.modal .close').addEventListener('click', closeModal);
+
+    fetchWord();
+    setupBoard();
+
+    window.addEventListener('load', () => {
+        document.getElementById('page-title').textContent = `La Palabra del Día - Nivel ${level + 1}`;
+        document.getElementById('level-title').textContent = `Nivel ${level + 1}`;
+    });
+</script>
