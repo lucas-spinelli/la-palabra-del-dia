@@ -149,210 +149,211 @@
         </div>
     </div>
 
-    <script>
-        let wordOfTheDay = '';
-        let currentRow = 0;
-        let currentTile = 0;
-        let gameEnded = false;
-        let boardState = Array(6).fill("").map(() => Array(5).fill(""));
-        let keyboardState = {};
-        let level = parseInt(localStorage.getItem('currentLevel') || '0'); // Load the current level
+   <script>
+    let wordOfTheDay = '';
+    let currentRow = 0;
+    let currentTile = 0;
+    let gameEnded = false;
+    let boardState = Array(6).fill("").map(() => Array(5).fill(""));
+    let keyboardState = {};
+    let level = parseInt(localStorage.getItem('currentLevel') || '0'); // Load the current level
 
-        // Load saved stats
-        const stats = {
-            gamesPlayed: parseInt(localStorage.getItem('gamesPlayed') || 0),
-            wins: parseInt(localStorage.getItem('wins') || 0),
-            currentStreak: parseInt(localStorage.getItem('currentStreak') || 0),
-            bestStreak: parseInt(localStorage.getItem('bestStreak') || 0),
-        };
+    // Load saved stats
+    const stats = {
+        gamesPlayed: parseInt(localStorage.getItem('gamesPlayed') || 0),
+        wins: parseInt(localStorage.getItem('wins') || 0),
+        currentStreak: parseInt(localStorage.getItem('currentStreak') || 0),
+        bestStreak: parseInt(localStorage.getItem('bestStreak') || 0),
+    };
 
-        function updateStats() {
-            document.getElementById('games-played').textContent = stats.gamesPlayed;
-            document.getElementById('win-percentage').textContent = stats.gamesPlayed ? Math.floor((stats.wins / stats.gamesPlayed) * 100) + '%' : '0%';
-            document.getElementById('current-streak').textContent = stats.currentStreak;
-            document.getElementById('best-streak').textContent = stats.bestStreak;
-        }
+    function updateStats() {
+        document.getElementById('games-played').textContent = stats.gamesPlayed;
+        document.getElementById('win-percentage').textContent = stats.gamesPlayed ? Math.floor((stats.wins / stats.gamesPlayed) * 100) + '%' : '0%';
+        document.getElementById('current-streak').textContent = stats.currentStreak;
+        document.getElementById('best-streak').textContent = stats.bestStreak;
+    }
 
-        function saveStats() {
-            localStorage.setItem('gamesPlayed', stats.gamesPlayed);
-            localStorage.setItem('wins', stats.wins);
-            localStorage.setItem('currentStreak', stats.currentStreak);
-            localStorage.setItem('bestStreak', stats.bestStreak);
-        }
+    function saveStats() {
+        localStorage.setItem('gamesPlayed', stats.gamesPlayed);
+        localStorage.setItem('wins', stats.wins);
+        localStorage.setItem('currentStreak', stats.currentStreak);
+        localStorage.setItem('bestStreak', stats.bestStreak);
+    }
 
-        function showModal(message) {
-            const modal = document.getElementById('game-end-modal');
-            document.getElementById('game-end-message').textContent = message;
-            modal.style.display = 'block';
-            updateStats();
-        }
+    function showModal(message) {
+        const modal = document.getElementById('game-end-modal');
+        document.getElementById('game-end-message').textContent = message;
+        modal.style.display = 'block';
+        updateStats();
+    }
 
-        function closeModal() {
-            const modal = document.getElementById('game-end-modal');
-            modal.style.display = 'none';
-        }
+    function closeModal() {
+        const modal = document.getElementById('game-end-modal');
+        modal.style.display = 'none';
+    }
 
-        function createTileElement() {
-            const tile = document.createElement('div');
-            tile.classList.add('tile');
-            return tile;
-        }
+    function createTileElement() {
+        const tile = document.createElement('div');
+        tile.classList.add('tile');
+        return tile;
+    }
 
-        function initBoard() {
-            const gameBoard = document.getElementById('game-board');
-            gameBoard.innerHTML = '';
-            for (let i = 0; i < 6; i++) {
-                for (let j = 0; j < 5; j++) {
-                    gameBoard.appendChild(createTileElement());
-                }
+    function initBoard() {
+        const gameBoard = document.getElementById('game-board');
+        gameBoard.innerHTML = '';
+        for (let i = 0; i < 6; i++) {
+            for (let j = 0; j < 5; j++) {
+                gameBoard.appendChild(createTileElement());
             }
         }
+    }
 
-        function updateBoard() {
-            const gameBoard = document.getElementById('game-board');
-            const tiles = gameBoard.querySelectorAll('.tile');
-            boardState.forEach((row, rowIndex) => {
-                row.forEach((letter, tileIndex) => {
-                    const tile = tiles[rowIndex * 5 + tileIndex];
-                    tile.textContent = letter;
-                    if (rowIndex < currentRow) {
-                        const key = letter.toUpperCase();
-                        if (wordOfTheDay.includes(key)) {
-                            if (wordOfTheDay[tileIndex] === key) {
-                                tile.classList.add('correct');
-                                keyboardState[key] = 'correct';
-                            } else {
-                                tile.classList.add('present');
-                                keyboardState[key] = 'present';
-                            }
+    function updateBoard() {
+        const gameBoard = document.getElementById('game-board');
+        const tiles = gameBoard.querySelectorAll('.tile');
+        boardState.forEach((row, rowIndex) => {
+            row.forEach((letter, tileIndex) => {
+                const tile = tiles[rowIndex * 5 + tileIndex];
+                tile.textContent = letter;
+                if (rowIndex < currentRow) {
+                    const key = letter.toUpperCase();
+                    if (wordOfTheDay.includes(key)) {
+                        if (wordOfTheDay[tileIndex] === key) {
+                            tile.classList.add('correct');
+                            keyboardState[key] = 'correct';
                         } else {
-                            tile.classList.add('absent');
-                            if (keyboardState[key] !== 'correct' && keyboardState[key] !== 'present') {
-                                keyboardState[key] = 'absent';
-                            }
+                            tile.classList.add('present');
+                            keyboardState[key] = 'present';
                         }
-                    }
-                });
-            });
-            updateKeyboard();
-        }
-
-        function updateKeyboard() {
-            const keyboardButtons = document.querySelectorAll('#keyboard button');
-            keyboardButtons.forEach(button => {
-                const key = button.textContent.toUpperCase();
-                if (keyboardState[key]) {
-                    button.classList.add(keyboardState[key]);
-                }
-            });
-        }
-
-        function handleKeyPress(key) {
-            if (gameEnded) return;
-            if (key === 'Enter') {
-                if (currentTile === 5) {
-                    const guess = boardState[currentRow].join('');
-                    if (guess.length === 5) {
-                        if (guess === wordOfTheDay) {
-                            stats.wins++;
-                            stats.currentStreak++;
-                            if (stats.currentStreak > stats.bestStreak) {
-                                stats.bestStreak = stats.currentStreak;
-                            }
-                            stats.gamesPlayed++;
-                            saveStats();
-                            showModal('¡Felicidades! Has acertado la palabra.');
-                            gameEnded = true;
-                            setTimeout(nextLevel, 2000);
-                        } else {
-                            if (currentRow < 5) {
-                                currentRow++;
-                                currentTile = 0;
-                            } else {
-                                showModal('Lo siento, se acabaron tus intentos.');
-                                stats.gamesPlayed++;
-                                stats.currentStreak = 0;
-                                saveStats();
-                                gameEnded = true;
-                            }
-                            updateBoard();
-                        }
-                    }
-                }
-            } else if (key === 'Delete') {
-                if (currentTile > 0) {
-                    currentTile--;
-                    boardState[currentRow][currentTile] = '';
-                    updateBoard();
-                }
-            } else {
-                if (currentTile < 5 && currentRow < 6) {
-                    boardState[currentRow][currentTile] = key.toUpperCase();
-                    currentTile++;
-                    updateBoard();
-                }
-            }
-        }
-
-        function nextLevel() {
-            if (level < 29) { // Suponiendo 30 niveles
-                level++;
-                localStorage.setItem('currentLevel', level);
-                currentRow = 0;
-                currentTile = 0;
-                boardState = Array(6).fill("").map(() => Array(5).fill(""));
-                gameEnded = false;
-                keyboardState = {};
-                loadLevel();
-            } else {
-                showModal('¡Felicidades! Has completado todos los niveles.');
-            }
-        }
-
-        function loadLevel() {
-            fetch('dias.txt')
-                .then(response => response.text())
-                .then(text => {
-                    const words = text.split('\n').filter(Boolean); // Filtra líneas vacías
-                    if (level < words.length) {
-                        wordOfTheDay = words[level].trim().toUpperCase();
-                        document.getElementById('page-title').textContent = `La Palabra del Día - Nivel ${level + 1}`;
-                        document.getElementById('level-title').textContent = `Nivel ${level + 1}`;
-                        initBoard();
                     } else {
-                        showModal('¡Felicidades! Has completado todos los niveles.');
-                        gameEnded = true;
+                        tile.classList.add('absent');
+                        if (keyboardState[key] !== 'correct' && keyboardState[key] !== 'present') {
+                            keyboardState[key] = 'absent';
+                        }
                     }
-                })
-                .catch(err => {
-                    console.error('Error loading words:', err);
-                    showModal('No se pudieron cargar las palabras. Por favor, intenta de nuevo.');
-                });
-        }
+                }
+            });
+        });
+        updateKeyboard();
+    }
 
-        document.addEventListener('DOMContentLoaded', () => {
-            loadLevel();
-            document.getElementById('keyboard').addEventListener('click', (event) => {
-                if (event.target.tagName === 'BUTTON') {
-                    handleKeyPress(event.target.textContent);
-                }
-            });
-            document.addEventListener('keydown', (event) => {
-                if (event.key === 'Enter') {
-                    handleKeyPress('Enter');
-                } else if (event.key === 'Backspace') {
-                    handleKeyPress('Delete');
-                } else if (/^[a-zA-Z]$/.test(event.key)) {
-                    handleKeyPress(event.key.toUpperCase());
-                }
-            });
-            document.querySelector('.close').onclick = closeModal;
-            window.onclick = function(event) {
-                if (event.target === document.getElementById('game-end-modal')) {
-                    closeModal();
-                }
+    function updateKeyboard() {
+        const keyboardButtons = document.querySelectorAll('#keyboard button');
+        keyboardButtons.forEach(button => {
+            const key = button.textContent.toUpperCase();
+            if (keyboardState[key]) {
+                button.classList.add(keyboardState[key]);
             }
         });
-    </script>
+    }
+
+    function handleKeyPress(key) {
+        if (gameEnded) return;
+        if (key === 'Enter') {
+            if (currentTile === 5) {
+                const guess = boardState[currentRow].join('');
+                if (guess.length === 5) {
+                    if (guess === wordOfTheDay) {
+                        stats.wins++;
+                        stats.currentStreak++;
+                        if (stats.currentStreak > stats.bestStreak) {
+                            stats.bestStreak = stats.currentStreak;
+                        }
+                        stats.gamesPlayed++;
+                        saveStats();
+                        showModal('¡Felicidades! Has acertado la palabra.');
+                        gameEnded = true;
+                        setTimeout(nextLevel, 2000);
+                    } else {
+                        if (currentRow < 5) {
+                            currentRow++;
+                            currentTile = 0;
+                        } else {
+                            showModal('Lo siento, se acabaron tus intentos.');
+                            stats.gamesPlayed++;
+                            stats.currentStreak = 0;
+                            saveStats();
+                            gameEnded = true;
+                        }
+                        updateBoard();
+                    }
+                }
+            }
+        } else if (key === 'Delete') {
+            if (currentTile > 0) {
+                currentTile--;
+                boardState[currentRow][currentTile] = '';
+                updateBoard();
+            }
+        } else {
+            if (currentTile < 5 && currentRow < 6) {
+                boardState[currentRow][currentTile] = key.toUpperCase();
+                currentTile++;
+                updateBoard();
+            }
+        }
+    }
+
+    function nextLevel() {
+        if (level < 29) { // Suponiendo 30 niveles
+            level++;
+            localStorage.setItem('currentLevel', level);
+            currentRow = 0;
+            currentTile = 0;
+            boardState = Array(6).fill("").map(() => Array(5).fill(""));
+            gameEnded = false;
+            keyboardState = {};
+            loadLevel();
+        } else {
+            showModal('¡Felicidades! Has completado todos los niveles.');
+        }
+    }
+
+    function loadLevel() {
+        fetch('dias.txt')
+            .then(response => response.text())
+            .then(text => {
+                const words = text.split('\n').filter(Boolean); // Filtra líneas vacías
+                if (level < words.length) {
+                    wordOfTheDay = words[level].trim().toUpperCase();
+                    document.getElementById('page-title').textContent = `La Palabra del Día - Nivel ${level + 1}`;
+                    document.getElementById('level-title').textContent = `Nivel ${level + 1}`;
+                    initBoard();
+                } else {
+                    showModal('¡Felicidades! Has completado todos los niveles.');
+                    gameEnded = true;
+                }
+            })
+            .catch(err => {
+                console.error('Error loading words:', err);
+                showModal('No se pudieron cargar las palabras. Por favor, intenta de nuevo.');
+            });
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+        loadLevel();
+        document.getElementById('keyboard').addEventListener('click', (event) => {
+            if (event.target.tagName === 'BUTTON') {
+                const key = event.target.id === 'enter' ? 'Enter' : event.target.id === 'delete' ? 'Delete' : event.target.textContent;
+                handleKeyPress(key);
+            }
+        });
+        document.addEventListener('keydown', (event) => {
+            if (event.key === 'Enter') {
+                handleKeyPress('Enter');
+            } else if (event.key === 'Backspace') {
+                handleKeyPress('Delete');
+            } else if (/^[a-zA-ZñÑ]$/.test(event.key)) {
+                handleKeyPress(event.key.toUpperCase());
+            }
+        });
+        document.querySelector('.close').onclick = closeModal;
+        window.onclick = function(event) {
+            if (event.target === document.getElementById('game-end-modal')) {
+                closeModal();
+            }
+        }
+    });
+</script>
 </body>
 </html>
