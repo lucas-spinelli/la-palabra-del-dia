@@ -42,22 +42,22 @@ Sigue estos pasos para instalar y ejecutar el juego localmente:
 
 ¡Eso es todo! Ya puedes disfrutar del juego "Palabra del día" en tu navegador.
 
-Uso
+## Uso
 Inicio del Juego: Abre el archivo index.html en tu navegador.
 Interacción: Utiliza el teclado virtual o tu teclado físico para adivinar la palabra oculta.
 Niveles: Completa el nivel actual para avanzar al siguiente. Cada día se presentan nuevos desafíos para mantener el juego interesante.
-Contribución
-Estamos abiertos a colaboraciones que mejoren el juego "Palabra del día". Si deseas contribuir, por favor sigue estos pasos:
 
+## Contribución
+Estamos abiertos a colaboraciones que mejoren el juego "Palabra del día". Si deseas contribuir, por favor sigue estos pasos:
 Contacta con nosotros a través del correo electrónico info@lucki.uno para solicitar permiso antes de comenzar cualquier trabajo.
 Describe brevemente las mejoras o características que te gustaría agregar.
 Una vez aprobado, haz un fork del proyecto, realiza tus cambios y envía un pull request.
 Valoramos todas las contribuciones y nos esforzamos por mantener una comunidad inclusiva y colaborativa.
 
-Licencia
+## Licencia
 Este proyecto está licenciado bajo la licencia Apache License 2.0. Para más detalles, consulta el archivo LICENSE.
 
-Contacto
+## Contacto
 Si tienes preguntas, sugerencias o deseas colaborar, no dudes en contactarnos:
 
 Sitio web: luckiapps.xyz
