@@ -60,7 +60,8 @@ Este proyecto está licenciado bajo la licencia Apache License 2.0. Para más de
 ## Contacto
 Si tienes preguntas, sugerencias o deseas colaborar, no dudes en contactarnos:
 
-Sitio web: luckiapps.xyz
-Sitio web de notas: mininotes.uno
+Sitio web: https://luckiapps.xyz
+Sitio web de notas: https://mininotes.uno
 Email: info@lucki.uno
-¡Gracias por tu interés en "Palabra del día"!
+
+## ¡Gracias por tu interés en "Palabra del día"!
