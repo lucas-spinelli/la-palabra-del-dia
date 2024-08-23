@@ -9,7 +9,6 @@ Chata
 Vento
 Pucho
 Facha
-Fierro
 Amigo
 Campo
 Cacho
@@ -21,7 +20,6 @@ Bicho
 Copa
 Panza
 Lindo
-Río
 Chico
 Cuero
 Pampa
