@@ -156,7 +156,7 @@
         let gameEnded = false;
         let boardState = Array(6).fill("").map(() => Array(5).fill(""));
         let keyboardState = {};
-        let level = 0; // Start from level 0 (level 1 in human terms)
+        let level = parseInt(localStorage.getItem('currentLevel') || '0'); // Load the current level
 
         // Load saved stats
         const stats = {
@@ -223,9 +223,7 @@
                                 keyboardState[key] = 'correct';
                             } else {
                                 tile.classList.add('present');
-                                if (keyboardState[key] !== 'correct') {
-                                    keyboardState[key] = 'present';
-                                }
+                                keyboardState[key] = 'present';
                             }
                         } else {
                             tile.classList.add('absent');
@@ -282,12 +280,14 @@
         }
 
         function nextLevel() {
-            if (wordOfTheDay === '') {
-                level++;
-                loadLevel();
-            } else {
+            level++;
+            if (level < 6) { // assuming there are 5 levels
                 localStorage.setItem('currentLevel', level);
                 window.location.reload();
+            } else {
+                showModal('¡Felicidades! Has completado todos los niveles.');
+                gameEnded = true;
+                localStorage.removeItem('currentLevel');
             }
         }
 
@@ -310,9 +310,11 @@
         }
 
         document.addEventListener('DOMContentLoaded', () => {
-            level = parseInt(localStorage.getItem('currentLevel') || '0');
-            if (level === 0) {
-                localStorage.removeItem('currentLevel');
+            if (localStorage.getItem('currentLevel') === null) {
+                localStorage.setItem('currentLevel', '0');
+                level = 0;
+            } else {
+                level = parseInt(localStorage.getItem('currentLevel'));
             }
             loadLevel();
 
