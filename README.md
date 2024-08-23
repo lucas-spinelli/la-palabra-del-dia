@@ -37,7 +37,7 @@ Sigue estos pasos para instalar y ejecutar el juego localmente:
    ```bash
    git clone https://github.com/lucas-spinelli/la-palabra-del-dia.git
 2. Navega al directorio del proyecto:
-   cd tu-repositorio
+   cd la-palabra-del-dia
 3. Abre el archivo index.html en tu navegador.
 
 ¡Eso es todo! Ya puedes disfrutar del juego "Palabra del día" en tu navegador.
