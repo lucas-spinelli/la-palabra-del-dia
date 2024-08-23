@@ -149,7 +149,7 @@
         </div>
     </div>
 
-   <script>
+  <script>
     let wordOfTheDay = '';
     let currentRow = 0;
     let currentTile = 0;
@@ -345,6 +345,8 @@
                 handleKeyPress('Delete');
             } else if (/^[a-zA-ZñÑ]$/.test(event.key)) {
                 handleKeyPress(event.key.toUpperCase());
+            } else if (event.key === 'Escape' || event.key === ' ') {  // Detect Esc or Space key
+                closeModal();
             }
         });
         document.querySelector('.close').onclick = closeModal;
@@ -355,5 +357,6 @@
         }
     });
 </script>
+
 </body>
 </html>
